@@ -1,0 +1,2 @@
+﻿This Project is based on the article "Versioning your Database on a Budget with C# and SMO" from David Wimbley on codeproject.
+https://www.codeproject.com/tips/639743/versioning-your-database-on-a-budget-with-csharp-a

@@ -17,8 +17,9 @@ namespace SmoScripting
             string dbName = "ScriptTest";
             string scriptsDir = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
 
-            SmoExample.GenerateScripts(dbName, server, scriptsDir);
-            Console.WriteLine($"Duration: {DateTime.Now-start}");
+            SmoScripter scripter = new(dbName, server, scriptsDir);
+            scripter.GenerateScripts();
+            Console.WriteLine($"Duration: {DateTime.Now - start}");
         }
     }
 }

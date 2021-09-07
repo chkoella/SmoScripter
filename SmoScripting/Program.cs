@@ -1,8 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Reflection;
-
-namespace SmoScripting
+﻿namespace SmoScripting
 {
     class Program
     {
@@ -15,11 +11,17 @@ namespace SmoScripting
             //string scriptsDir = args[2];
             string server = "localhost";
             string dbName = "ScriptTest";
-            string scriptsDir = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
+            string scriptsDir = GetApplicationRoot();
 
             SmoScripter scripter = new(dbName, server, scriptsDir);
             scripter.GenerateScripts();
             Console.WriteLine($"Duration: {DateTime.Now - start}");
+        }
+
+        private static string GetApplicationRoot()
+        {
+            return Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory)
+                ?? throw new Exception("Failed to determine the application root directory");      
         }
     }
 }

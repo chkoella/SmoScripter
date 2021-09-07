@@ -14,8 +14,12 @@ namespace SmoScripting
         private readonly string dbServerFolder;
         private readonly string dbFolder;
         private readonly string dbTablesFolder;
+        private readonly string dbViewsFolder;
         private readonly string dbStoredProcFolder;
         private readonly string dbUserFunctionsFolder;
+        private readonly string dbUserDefinedDataTypesFolder;
+        private readonly string dbUserDefinedTableTypesFolder;
+        private readonly string dbTableValuedFunctionsFolder;
 
         public SmoScripter(string dbName, string dbServer, string scriptsDir)
         {
@@ -24,8 +28,13 @@ namespace SmoScripting
             dbServerFolder = Path.Combine(scriptsDir, dbServer.Replace(".", ""));
             dbFolder = Path.Combine(dbServerFolder, dbName);
             dbTablesFolder = Path.Combine(dbFolder, "Tables");
+            dbViewsFolder = Path.Combine(dbFolder, "Views");
             dbStoredProcFolder = Path.Combine(dbFolder, "StoredProcedures");
             dbUserFunctionsFolder = Path.Combine(dbFolder, "Functions");
+            dbUserDefinedDataTypesFolder = Path.Combine(dbFolder, "UserDefinedDataTypes");
+            dbUserDefinedTableTypesFolder = Path.Combine(dbFolder, "UserDefinedTableTypes");
+            dbTableValuedFunctionsFolder = Path.Combine(dbFolder, "TableValuedFunctions");
+
         }
 
         public void GenerateScripts()
@@ -40,11 +49,21 @@ namespace SmoScripting
             Scripter scrp = new(srv);
             SetScripterOptions(scrp);
 
+            ScriptObject(db, dbFolder, scrp, "Database");
+
             foreach (Table tb in db.Tables)
             {
                 if (tb.IsSystemObject == false)
                 {
                     ScriptObject(tb, dbTablesFolder, scrp);
+                }
+            }
+
+            foreach(View view in db.Views)
+            {
+                if(view.IsSystemObject == false)
+                {
+                    ScriptObject(view, dbViewsFolder, scrp);
                 }
             }
 
@@ -62,6 +81,16 @@ namespace SmoScripting
                 {
                     ScriptObject(function, dbUserFunctionsFolder, scrp);
                 }
+            }
+
+            foreach(UserDefinedDataType dataType in db.UserDefinedDataTypes)
+            {
+                ScriptObject(dataType, dbUserDefinedDataTypesFolder, scrp);
+            }
+
+            foreach (UserDefinedTableType tableType in db.UserDefinedTableTypes)
+            {
+                ScriptObject(tableType, dbUserDefinedTableTypesFolder, scrp);
             }
         }
 
@@ -105,9 +134,13 @@ namespace SmoScripting
         {
             Directory.CreateDirectory(dbServerFolder);
             Directory.CreateDirectory(dbFolder);
+            Directory.CreateDirectory(dbViewsFolder);
             Directory.CreateDirectory(dbTablesFolder);
             Directory.CreateDirectory(dbUserFunctionsFolder);
             Directory.CreateDirectory(dbStoredProcFolder);
+            Directory.CreateDirectory(dbUserDefinedDataTypesFolder);
+            Directory.CreateDirectory(dbUserDefinedTableTypesFolder);
+
         }
 
         private static void ScriptObject(ScriptSchemaObjectBase sqlObject, string folder, Scripter scrp)
@@ -118,6 +151,26 @@ namespace SmoScripting
                 .AddAfterEachElement("GO");
             File.WriteAllLines(
                 Path.Combine(folder, $"{sqlObject.Schema}.{sqlObject.Name}.sql"),
+                dbscripts,
+                Encoding.UTF8);
+        }
+
+        private static void ScriptObject(ScriptNameObjectBase sqlObject, string folder, Scripter scrp, string? fileName = null)
+        {
+            if(sqlObject is Database)
+            {
+                scrp.Options.WithDependencies = false;
+            }
+            StringCollection scriptCollection = scrp.Script(new[] { sqlObject });
+            if (sqlObject is Database)
+            {
+                scrp.Options.WithDependencies = true;
+            }
+            IEnumerable<string> dbscripts = scriptCollection
+                .Cast<string>()
+                .AddAfterEachElement("GO");
+            File.WriteAllLines(
+                Path.Combine(folder, $"{fileName ?? sqlObject.Name}.sql"),
                 dbscripts,
                 Encoding.UTF8);
         }
